@@ -1,0 +1,39 @@
+#!/bin/bash
+#Scripts assumes that branch name is starting from jira ticket number.
+
+FILE_WITH_MESSAGE=$1
+COMMIT_MESSAGE=$(cat $FILE_WITH_MESSAGE)
+
+if $( echo "$COMMIT_MESSAGE" | grep -Eq '^[A-Z]+-[0-9]+' ) ; then
+  #commit message has already ticket number.
+  exit 0
+fi
+
+
+addJiraTicketNumber() {
+  NAME=$(git branch | grep '*' | sed 's/* //')
+
+  if [[ $NAME =~  ^[A-Z]+-[0-9]+ ]]; then
+    PREFIX=${BASH_REMATCH[0]}
+  else
+    echo "Branch do not have correct prefix. Can't commit. Please fix branch name.\n"
+    exit 1
+  fi
+
+  DESCRIPTION=$(git config branch. "$NAME" .description)
+  echo "$PREFIX $COMMIT_MESSAGE" > $FILE_WITH_MESSAGE
+  if [ -n "$DESCRIPTION" ]
+  then
+     echo "" >> $FILE_WITH_MESSAGE
+     echo $DESCRIPTION >> $FILE_WITH_MESSAGE
+  fi
+}
+
+#Allow for merge commits.
+MERGE=$(echo $COMMIT_MESSAGE|grep -i 'merge'|wc -l)
+
+if [ $MERGE -eq 0 ] ; then
+  addJiraTicketNumber
+fi
+
+exit 0
